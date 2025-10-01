@@ -71,6 +71,7 @@ export async function notifyClients() {
   const data = JSON.stringify(voteData);
   clients.forEach(sendData => {
     try {
+      console.log(`[notifyClients] Notifying client with data: ${data}`);
       sendData(data);
     } catch (error) {
       // Client disconnected, will be cleaned up

@@ -61,6 +61,7 @@ export default function Home() {
           const data = JSON.parse(event.data);
           if (data.type !== 'connected' && data.options) {
             setVoteData(data);
+            console.log('SSE message received:', data);
           }
         } catch (error) {
           // Ignore malformed messages
