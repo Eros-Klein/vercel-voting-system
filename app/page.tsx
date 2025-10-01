@@ -35,31 +35,70 @@ export default function Home() {
       .then(data => setVoteData(data));
   }, []);
 
-  // Setup SSE connection
+  // Setup SSE connection with automatic reconnection
   useEffect(() => {
-    const eventSource = new EventSource('/api/events');
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isUnmounting = false;
 
-    eventSource.onopen = () => {
-      setIsConnected(true);
-    };
+    const connectSSE = () => {
+      if (isUnmounting) return;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type !== 'connected' && data.options) {
-          setVoteData(data);
-        }
-      } catch (error) {
-        // Ignore malformed messages
+      // Close existing connection if any
+      if (eventSource) {
+        eventSource.close();
       }
+
+      eventSource = new EventSource('/api/events');
+
+      eventSource.onopen = () => {
+        console.log('SSE Connected');
+        setIsConnected(true);
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type !== 'connected' && data.options) {
+            setVoteData(data);
+          }
+        } catch (error) {
+          // Ignore malformed messages
+          console.error('SSE message parse error:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
+        setIsConnected(false);
+        
+        // Close and attempt reconnection
+        if (eventSource) {
+          eventSource.close();
+        }
+
+        if (!isUnmounting) {
+          // Reconnect after 3 seconds
+          reconnectTimeout = setTimeout(() => {
+            console.log('Attempting to reconnect SSE...');
+            connectSSE();
+          }, 3000);
+        }
+      };
     };
 
-    eventSource.onerror = () => {
-      setIsConnected(false);
-    };
+    // Initial connection
+    connectSSE();
 
+    // Cleanup function
     return () => {
-      eventSource.close();
+      isUnmounting = true;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (eventSource) {
+        eventSource.close();
+      }
     };
   }, []);
 
@@ -250,10 +289,12 @@ export default function Home() {
           
           {/* Status badges */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-            <div className="glass-card px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} ${isConnected ? 'animate-pulse' : ''}`}></div>
+            <div className={`glass-card px-4 py-2 rounded-full border border-white/20 backdrop-blur-xl flex items-center gap-2 transition-all duration-300 ${
+              isConnected ? 'bg-green-500/20' : 'bg-orange-500/20'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-orange-400'} ${isConnected ? 'animate-pulse' : 'animate-bounce'}`}></div>
               <span className="text-white/90 text-sm font-medium">
-                {isConnected ? '🟢 Live' : '🔴 Connecting...'}
+                {isConnected ? '🟢 Live' : '🟠 Reconnecting...'}
               </span>
             </div>
             {userName && (

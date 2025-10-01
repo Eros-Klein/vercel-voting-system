@@ -5,7 +5,7 @@ A beautiful, real-time voting application built with Next.js, Server-Sent Events
 ## Features
 
 - 🔐 **Keycloak Authentication**: Secure SSO authentication with HTL Leonding Keycloak
-- ✨ **Real-time Updates**: Uses Server-Sent Events (SSE) for instant synchronization across all users
+- ✨ **Real-time Updates**: Uses Server-Sent Events (SSE) with automatic reconnection for reliable synchronization
 - 🎨 **Glassmorphism UI**: Beautiful Apple-inspired glass design with smooth animations
 - 💾 **Persistent Storage**: Data stored in Redis database
 - 👤 **User Identity**: Authenticated users with real names from Keycloak
