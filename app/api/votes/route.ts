@@ -41,18 +41,12 @@ async function getRedisClient() {
 async function initializeData(): Promise<VoteData> {
   const client = await getRedisClient();
   const existingData = await client.get(VOTE_DATA_KEY);
-  
+
   if (!existingData) {
-    const defaultData: VoteData = {
-      options: [
-        { id: '1', text: 'Pizza', votes: 0, voters: [], createdBy: 'System', createdAt: Date.now() },
-        { id: '2', text: 'Burgers', votes: 0, voters: [], createdBy: 'System', createdAt: Date.now() },
-        { id: '3', text: 'Tacos', votes: 0, voters: [], createdBy: 'System', createdAt: Date.now() }
-      ],
+    return {
+      options: [],
       lastUpdate: Date.now()
     };
-    await client.set(VOTE_DATA_KEY, JSON.stringify(defaultData));
-    return defaultData;
   }
   
   return JSON.parse(existingData);
